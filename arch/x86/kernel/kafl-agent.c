@@ -385,6 +385,27 @@ static bool tdx_fuzz_port_allowed(short int port)
 	}
 }
 
+static unsigned int host_cpuid_leaves[] = {0x2, 0x5, 0x6, 0x9, 0xb,
+       0xc, 0x10, 0x16, 0x17, 0x18, 0x1a, 0x1b, 0x1f, 0x80000002,
+       0x80000003, 0x80000004, 0x80000005, 0x80000006, 0x80000007};
+
+static bool is_fuzzed_cpuid_leaf(uintptr_t addr) {
+       int i;
+
+       // Check if CPUID leaf in list of host-controlled ones
+       for  (i = 0; i < sizeof(host_cpuid_leaves)/ sizeof(host_cpuid_leaves[0]); i++) {
+               if (addr == host_cpuid_leaves[i])
+                       return true;
+       }
+
+       // MSRs reserved for software use
+       if (addr >= 0x40000000 && addr <= 0x400000FF)
+               return true;
+
+       return false;
+}
+
+
 /*
  * Return 0 to skip fuzzing based on type/addr
  */
@@ -431,12 +452,14 @@ static bool kafl_fuzz_filter(uintptr_t addr, enum tdx_fuzz_loc type)
 		case TDX_FUZZ_VIRTIO:
 			return 0;
 #endif
-#ifdef CONFIG_TDX_FUZZ_KAFL_SKIP_CPUID
 		case TDX_FUZZ_CPUID1:
 		case TDX_FUZZ_CPUID2:
 		case TDX_FUZZ_CPUID3:
 		case TDX_FUZZ_CPUID4:
-			return 0;
+#ifdef CONFIG_TDX_FUZZ_KAFL_SKIP_CPUID
+                        return 0;
+#else
+                        return is_fuzzed_cpuid_leaf(addr);
 #endif
 		case TDX_FUZZ_DEBUGFS:
 		default:

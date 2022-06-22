@@ -586,10 +586,10 @@ static bool tdx_handle_cpuid(struct pt_regs *regs)
 	 * EAX, EBX, ECX, EDX registers after CPUID instruction execution.
 	 * So copy the register contents back to pt_regs.
 	 */
-	regs->ax = tdx_fuzz(out.r12, -1, 2, TDX_FUZZ_CPUID1);
-	regs->bx = tdx_fuzz(out.r13, -1, 2, TDX_FUZZ_CPUID2);
-	regs->cx = tdx_fuzz(out.r14, -1, 2, TDX_FUZZ_CPUID3);
-	regs->dx = tdx_fuzz(out.r15, -1, 2, TDX_FUZZ_CPUID4);
+	regs->ax = tdx_fuzz(out.r12, regs->ax, 2, TDX_FUZZ_CPUID1);
+	regs->bx = tdx_fuzz(out.r13, regs->ax, 2, TDX_FUZZ_CPUID2);
+	regs->cx = tdx_fuzz(out.r14, regs->ax, 2, TDX_FUZZ_CPUID3);
+	regs->dx = tdx_fuzz(out.r15, regs->ax, 2, TDX_FUZZ_CPUID4);
 
 	return true;
 }
